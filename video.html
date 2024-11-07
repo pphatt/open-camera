@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Video from Camera</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-right: 5px;
+        }
+        a {
+            display: inline-block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Camera Stream and Video Recording</h2>
+    <video id="video" autoplay playsinline muted></video> <!-- Play video stream from the camera -->
+    <br>
+    <button id="startButton">Start Recording</button> <!-- Button to start recording -->
+    <button id="stopButton" disabled>Stop Recording</button> <!-- Button to stop recording -->
+    <br>
+    <a id="downloadLink" style="display:none;">Download Recorded Video</a> <!-- Link to download the recorded video -->
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        async function openCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment", // Open rear camera
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: true // Enable audio recording
+                });
+
+                const videoElement = document.getElementById('video');
+                videoElement.srcObject = stream;
+
+                // Initialize MediaRecorder to record video
+                mediaRecorder = new MediaRecorder(stream);
+
+                // While recording, data is stored in small chunks
+                mediaRecorder.ondataavailable = function(event) {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                // When recording stops, create video from the recorded chunks
+                mediaRecorder.onstop = function() {
+                    const blob = new Blob(recordedChunks, {
+                        type: 'video/webm' // Video format
+                    });
+                    const videoURL = URL.createObjectURL(blob);
+
+                    // Create a link to download the video
+                    const downloadLink = document.getElementById('downloadLink');
+                    downloadLink.href = videoURL;
+                    downloadLink.download = 'recorded_video.webm'; // Name of the downloaded video file
+                    downloadLink.style.display = 'block'; // Show the download link
+                    downloadLink.textContent = 'Download Recorded Video';
+
+                    recordedChunks = []; // Reset chunks for new video recording
+                };
+            } catch (err) {
+                console.error("Camera access error: ", err);
+            }
+        }
+
+        // Open the camera when the page loads
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            openCamera();
+        } else {
+            alert("Your browser does not support camera access.");
+        }
+
+        // Event when Start Recording button is clicked
+        document.getElementById('startButton').addEventListener('click', function() {
+            mediaRecorder.start(); // Start recording video
+            document.getElementById('startButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
+        });
+
+        // Event when Stop Recording button is clicked
+        document.getElementById('stopButton').addEventListener('click', function() {
+            mediaRecorder.stop(); // Stop recording video
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
+        });
+    </script>
+</body>
+</html>

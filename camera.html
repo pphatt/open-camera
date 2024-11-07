@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Access with Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        video, canvas {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+        }
+        img {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Camera Stream</h2>
+    <video id="video" autoplay playsinline muted></video> <!-- Video stream from the camera -->
+    <br>
+    <button id="captureButton">Capture Image</button> <!-- Button to capture image -->
+    <br>
+    <canvas id="canvas" style="display:none;"></canvas> <!-- Canvas for storing the captured image -->
+    <br>
+    <img id="capturedImage" alt="Captured image will appear here"> <!-- Captured image -->
+
+    <script>
+        // Initialize the video stream from the camera
+        async function openCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment", // Use the rear camera
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                const videoElement = document.getElementById('video');
+                videoElement.srcObject = stream;
+            } catch (err) {
+                console.error("Camera access error: ", err);
+            }
+        }
+
+        // Open the camera when the page loads
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            openCamera();
+        } else {
+            alert("Your browser does not support camera access.");
+        }
+
+        // Capture image functionality
+        document.getElementById('captureButton').addEventListener('click', function() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            // Set the canvas dimensions to match the video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw the current frame from the video onto the canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas content to an image and display it
+            const imageData = canvas.toDataURL('image/png'); // Export image in PNG format
+            const capturedImage = document.getElementById('capturedImage');
+            capturedImage.src = imageData;
+            capturedImage.style.display = 'block'; // Display the image
+        });
+    </script>
+</body>
+</html>
